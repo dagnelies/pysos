@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>HTML5 File API</title>
+        <meta charset="UTF-8" />
+		<style>
+			body {
+				font-family: helvetica, sans-serif;
+			}
+			
+			tbody {
+				font-family: courier new, monospaced;
+			}
+			tr:nth-child(even) {
+				background-color: #def
+			}
+		</style>
+    </head>
+    <body>
+        <input type="file" onchange="loadFile(this)"/>
+        <table>
+			<thead>
+				<tr>
+					<th>Key</th>
+					<th>Value</th>
+				</tr>
+			</thead>
+			<tbody id="results">
+			</tbody>
+		</table>
+		
+		
+		<script>
+
+function loadFile(input) {
+    var file = input.files[0]
+    console.log(file)
+ 
+    var fileReader = new FileReader();
+    fileReader.onload = function(e) {
+        console.log(e.target.result)
+		var output = ''
+		document.getElementById('results').innerHTML = output
+		
+		var text = e.target.result
+		var lines = text.split('\n')
+		var items = {}
+		
+		for(var i in lines) { 
+			var line = lines[i]
+			if( !line || line[0] == '#' )
+				continue
+			var singleItem = JSON.parse('{' + line + '}')
+			for(var k in singleItem) {
+				output += '<tr><td>' + k + '</td><td>' + singleItem[k] + '</td></tr>'
+				//items[k] = singleItem[k]
+			}
+				
+			if( i > 100 )
+				break
+		}
+		document.getElementById('results').innerHTML = output
+		//document.getElementById('output').innerHTML = JSON.stringify(items,null,2)
+    };
+    fileReader.onerror = function(e) {
+        console.log(e.target.error.name);
+    };
+    fileReader.onprogress = function(e) {
+        console.log(e.loaded, e.total);
+    };
+    fileReader.readAsText(file);
+}
+
+ 
+
+</script>
+    </body>
+</html>
