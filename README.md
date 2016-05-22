@@ -9,12 +9,12 @@ are too big to fit in memory or both.
 There are existing alternatives like `shelve`, which are recommended for the default case.
 
 There main difference with `sos` is that:
+
 - the data is stored in a text format (*)
 - it provides both persistent dicts *and* lists
-- for dicts, only string keys are allowed
 - objects must be json "dumpable" (no cyclic references, etc.)
-- it's fast (much faster than `shelve` on windows, but slightly slower on linux)
-- it's synchronous by design: when the function returns, you are sure it has been written on disk
+- it's fast (much faster than `shelve` on windows, but slightly slower than native `dbms` on linux)
+- it's unbuffered by design: when the function returns, you are sure it has been written on disk
 - it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
 
 (*) ...actually, it's *nearly* plain utf8 as it may contain some invalid utf8 characters in "garbage" bytes
