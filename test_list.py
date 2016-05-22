@@ -1,5 +1,5 @@
 import time
-import rnd
+import test_rnd as rnd
 import random
 
 # initialize the data
@@ -33,7 +33,7 @@ for key,val in items:
 print("%.2fs: %d items updated" % (time.time() - start, len(items)))
 
 # read all keys again
-random.shuffle(items)
+#random.shuffle(items)
 for key,val in items:
     val2 = db[key]
     assert val2 == 'updated ' + val

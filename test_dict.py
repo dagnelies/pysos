@@ -1,5 +1,5 @@
 import time
-import rnd
+import test_rnd as rnd
 import random
 
 # initialize the data
