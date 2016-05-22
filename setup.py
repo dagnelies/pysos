@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='pysos',
 
-    version='1.0.0',
+    version='1.0.1',
 
     description='Simple Object Storage - Persistent dicts and lists for python.',
     long_description=long_description,
