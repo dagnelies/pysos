@@ -347,3 +347,4 @@ class List:
         
     def close(self):
         self._dict.close()
+        

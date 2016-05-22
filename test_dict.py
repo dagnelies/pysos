@@ -8,8 +8,8 @@ items = [(rnd.utf8(20), rnd.utf8(200)) for i in range(N)]
 
 start = time.time()
 
-import sos
-db = sos.Dict('temp.sos_dict')
+import pysos
+db = pysos.Dict('temp.sos_dict')
 
 #import shelve
 #db = shelve.open('temp.shelve')
