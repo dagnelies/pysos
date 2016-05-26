@@ -104,8 +104,6 @@ try:
 except:
     import json
 
-# import mmap
-
 
     
 def parseLine(line):
@@ -124,8 +122,8 @@ def parseValue(line):
     (left, sep, right) = line.partition(b'\t')
     value = json.loads( right.decode('utf8') )
     return value
-    
-    
+
+
 class Dict:
     START_FLAG = b'# FILE-DICT v1\n'
 
@@ -154,7 +152,7 @@ class Dict:
                 offset += len(line) 
                 continue
             
-            if line[0] == b'#'[0]:   # the [0] is required!
+            if line[0] == 0x23:   # == b'#' does not work because b'#' is an array. 0x23 == b'#'[0]
                 if len(line) > 5:
                     self._free_lines.append( (len(line), offset) )
             else:
@@ -232,6 +230,11 @@ class Dict:
         # if it's a really big line, it won't be written at once on the disk
         # so until it's done, let's consider it a comment
         self._file.write(b'#' + line[1:])
+        if line[-1] == 35:
+            # if it ends with a "comment" (bytes to recycle),
+            # let's be clean and avoid cutting unicode chars in the middle
+            while self._file.peek(1)[0] & 0x80 == 0x80: # it's a continuation byte
+                self._file.write(b'.')
         self._file.flush()
         # now that everything has been written...
         self._file.seek(offset)
@@ -348,3 +351,46 @@ class List:
     def close(self):
         self._dict.close()
         
+
+import csv
+import chardet
+from chardet.universaldetector import UniversalDetector
+
+def detectEncoding(path):
+    
+    res = chardet.detect( open(path, 'rb').read(10*1024*1024) )
+    print(res)
+    return res['encoding']
+    
+    detector = UniversalDetector()
+    for line in open(path, 'rb'):
+        detector.feed(line)
+        if detector.done: break
+    detector.close()
+    print(detector.result)
+    return detector.result.encoding
+    
+def csv2sos(path, keys=None, encoding=None, dialect=None):
+    
+    if not encoding:
+        encoding = detectEncoding(path)
+        print('Detected encoding: %s' % encoding)
+    
+    csvfile = open(path, 'rt', encoding=encoding)
+    sosfile = open(path + '.sos', 'wt', encoding='utf8')
+
+    if not dialect:
+        dialect = csv.Sniffer().sniff(csvfile.read(1024*1024))
+        print('Detected csv dialect: %s' % dialect)
+    
+    csvfile.seek(0)
+    reader = csv.DictReader(csvfile, dialect=dialect)
+    i = 0
+    for row in reader:
+        sosfile.write(str(i) + '\t' + json.dumps(row, ensure_ascii=False) + '\n')
+        i += 1
+        if i % 100000 == 0:
+            print("%10d items converted" % i)
+
+    csvfile.close()    
+    sosfile.close()

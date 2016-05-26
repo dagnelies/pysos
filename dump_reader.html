@@ -38,23 +38,20 @@ function loadFile(input) {
  
     var fileReader = new FileReader();
     fileReader.onload = function(e) {
-        console.log(e.target.result)
-		var output = ''
+        var output = ''
 		document.getElementById('results').innerHTML = output
 		
 		var text = e.target.result
 		var lines = text.split('\n')
-		var items = {}
 		
 		for(var i in lines) { 
 			var line = lines[i]
 			if( !line || line[0] == '#' )
 				continue
-			var singleItem = JSON.parse('{' + line + '}')
-			for(var k in singleItem) {
-				output += '<tr><td>' + k + '</td><td>' + singleItem[k] + '</td></tr>'
-				//items[k] = singleItem[k]
-			}
+			var tokens = line.split('\t')
+			var key = JSON.parse( tokens[0] )
+			var val = JSON.parse( tokens[1] )
+			output += '<tr><td>' + key + '</td><td>' + val + '</td></tr>'
 				
 			if( i > 100 )
 				break
