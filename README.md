@@ -16,6 +16,8 @@ There main difference with `sos` is that:
 - it's fast (much faster than `shelve` on windows, but slightly slower than native `dbms` on linux)
 - it's unbuffered by design: when the function returns, you are sure it has been written on disk
 - it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
+- TODO: thread-safe (optionally)
+- TODO: writeback through dirty-checking
 
 Usage
 =====

@@ -124,7 +124,7 @@ def parseValue(line):
     return value
 
 
-class Dict:
+class Dict(dict):
     START_FLAG = b'# FILE-DICT v1\n'
 
     def __init__(self, path):
@@ -260,6 +260,12 @@ class Dict:
     def keys(self):
         return self._offsets.keys()
     
+    def clear(self):
+        self._file.truncate(0)
+        self._file.flush()
+        self._offsets = {}
+        self._free_lines = []
+        
     def items(self):
         offset = 0
         while True:
@@ -292,8 +298,6 @@ class Dict:
     def size(self):
         self._file.size()
         
-    def flush(self):
-        self._file.flush()
         
     def close(self):
         self._file.close()
@@ -302,7 +306,7 @@ class Dict:
 
 
 
-class List:
+class List(list):
     START_FLAG = b'# FILE-LIST v1\n'
     
     def __init__(self, path):
@@ -342,16 +346,41 @@ class List:
             yield self[i]
     
     
+    def clear(self):
+        self._dict.clear()
+        self._indexes = []
+    
+    
     def size(self):
         self._dict.size()
         
-    def flush(self):
-        self._dict.flush()
-        
     def close(self):
         self._dict.close()
-        
 
+
+def load(path):
+    file = open(path, 'rb')
+    first = file.readline()
+    
+    if first == Dict.START_FLAG:
+        file.close()
+        return Dict(path)
+    if first == List.START_FLAG:
+        file.close()
+        return List(path)
+        
+    for line in file:
+        if line[0] == 0x23:
+            continue
+        key = parseKey(line)
+        if isinstance(key, int):
+            file.close()
+            return List(path)
+        else:
+            file.close()
+            return Dict(path)
+    raise Exception("Empty collection without header. Cannot determine whether it is a list or a dict.")
+    
 import csv
 import chardet
 from chardet.universaldetector import UniversalDetector
