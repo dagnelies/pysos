@@ -383,11 +383,12 @@ def load(path):
     
 import csv
 import chardet
-from chardet.universaldetector import UniversalDetector
+#from chardet.universaldetector import UniversalDetector
+#import cchardet as chardet
 
 def detectEncoding(path):
-    
-    res = chardet.detect( open(path, 'rb').read(10*1024*1024) )
+    with open(path, 'rb') as f:
+        res = chardet.detect( f.read(10*1024*1024) )
     print(res)
     return res['encoding']
     
@@ -409,7 +410,7 @@ def csv2sos(path, keys=None, encoding=None, dialect=None):
     sosfile = open(path + '.sos', 'wt', encoding='utf8')
 
     if not dialect:
-        dialect = csv.Sniffer().sniff(csvfile.read(1024*1024))
+        dialect = csv.Sniffer().sniff(csvfile.read(1024*1024), delimiters=[';','\t',','])
         print('Detected csv dialect: %s' % dialect)
     
     csvfile.seek(0)

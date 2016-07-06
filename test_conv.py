@@ -1,8 +1,8 @@
-#import pysos
+import pysos
 
-#pysos.csv2sos('../data/omdb.txt', encoding='Windows-1252')
-
-data = open('../data/omdb.txt', 'rb').read(10*1024*1024)
+pysos.csv2sos('../data/omdb.txt', encoding='Windows-1252')
+exit()
+#data = open('../data/omdb.txt', 'rb').read(10*1024*1024)
 #data = open('temp.sos_dict', 'rb').read(1024*1024)
 
 #import chardet
