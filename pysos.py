@@ -140,6 +140,7 @@ class Dict(dict):
         self._file = file
         self._offsets = {}   # the (size, offset) of the lines, where size is in bytes, including the trailing \n
         self._free_lines = []
+        self._observers = []
         
         offset = 0
         while True:
@@ -196,11 +197,18 @@ class Dict(dict):
         return value
         
     def __setitem__(self, key, value):
+        # trigger observers
+        if self._observers:
+            old_value = self[key] if key in self else None
+            for callback in self._observers:
+                callback(key, value, old_value)
+        
         if key in self._offsets:
             # to be removed once the new value has been written
             old_offset = self._offsets[key]
         else:
             old_offset = None
+            
         
         line = json.dumps(key,ensure_ascii=False) + '\t' + json.dumps(value,ensure_ascii=False) + '\n'
         line = line.encode('UTF-8')
@@ -246,9 +254,17 @@ class Dict(dict):
             self._freeLine(old_offset)
         
         self._offsets[key] = offset
+        
+        
             
         
     def __delitem__(self, key):
+        # trigger observers
+        if self._observers:
+            old_value = self[key]
+            for callback in self._observers:
+                callback(key, None, old_value)
+                
         offset = self._offsets[key]
         self._freeLine(offset)
         del self._offsets[key]
@@ -256,6 +272,10 @@ class Dict(dict):
         
     def __contains__(self, key):
         return (key in self._offsets)
+    
+    def observe(self, callback):
+        self._observers.append(callback)
+        
     
     def keys(self):
         return self._offsets.keys()
@@ -312,24 +332,43 @@ class List(list):
     def __init__(self, path):
         self._dict = Dict(path)
         self._indexes = sorted( self._dict.keys() )
+        self._observers = []
     
     def __getitem__(self, i):
         key = self._indexes[i]
         return self._dict[key]
         
     def __setitem__(self, i, value):
+        # trigger observers
+        if self._observers:
+            old_value = self[i]
+            for callback in self._observers:
+                callback(i, value, old_value)
+                
         key = self._indexes[i]
         self._dict[key] = value
     
     def append(self, value):
+        # trigger observers
+        if self._observers:
+            for callback in self._observers:
+                callback(len(self._indexes), value, None)
+                
         if len(self._indexes) == 0:
             key = 0
         else:
             key = self._indexes[-1] + 1
+                
         self._dict[key] = value
         self._indexes.append(key)
         
     def __delitem__(self, i):
+        # trigger observers
+        if self._observers:
+            old_value = self[i]
+            for callback in self._observers:
+                callback(i, None, old_value)
+                
         key = self._indexes[i]
         del self._dict[key]
         del self._indexes[i]
@@ -345,7 +384,9 @@ class List(list):
         for i in range(len(self)):
             yield self[i]
     
-    
+    def observe(self, callback):
+        self._observers.append(callback)
+        
     def clear(self):
         self._dict.clear()
         self._indexes = []

@@ -18,6 +18,7 @@ There main difference with `sos` is that:
 - it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
 - TODO: thread-safe (optionally)
 - TODO: writeback through dirty-checking
+- ..
 
 Usage
 =====
