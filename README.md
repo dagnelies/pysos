@@ -61,10 +61,3 @@ I experimented with that too. In my experience, with the hardware/OS/data I test
 it turned out to ...*suck*. Using memory mapped files lead to inconsistent and unpredictible performance,
 often much slower than direct file access.
 
-
-### Why do you read values too when loading?
-
-Of course, it could be done much faster if only keys would be read!
-However, here as well, I opted for safety first.
-The loading takes a couple of seconds more, but at least you know your data is ok,
-instead of exploding in your face later at runtime.
