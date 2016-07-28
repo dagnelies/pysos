@@ -1,14 +1,13 @@
-SOS: Simple Objects Storage
-===========================
+pySOS: Simple Objects Storage
+=============================
 
 > persistant dictionaries and lists for python
 
 This is ideal for lists or dictionaries which either need persistence,
 are too big to fit in memory or both.
 
-There are existing alternatives like `shelve`, which are recommended for the default case.
-
-There main difference with `sos` is that:
+There are existing alternatives like `shelve`, which are very good too.
+There main difference with `pysos` is that:
 
 - the data is stored in plain text format
 - it provides both persistent dicts *and* lists
@@ -16,6 +15,7 @@ There main difference with `sos` is that:
 - it's fast (much faster than `shelve` on windows, but slightly slower than native `dbms` on linux)
 - it's unbuffered by design: when the function returns, you are sure it has been written on disk
 - it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
+- it is platform independent, unlike `shelve` which relies on an underlying `dbm` implementation, which may vary from system to system
 
 Usage
 -----
