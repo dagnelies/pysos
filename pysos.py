@@ -153,7 +153,7 @@ class Dict(dict):
                 offset += len(line) 
                 continue
             
-            if line[0] == 0x23:   # == b'#' does not work because b'#' is an array. 0x23 == b'#'[0]
+            if line.startswith(b'#'):	# skip comments but add to free list
                 if len(line) > 5:
                     self._free_lines.append( (len(line), offset) )
             else:
