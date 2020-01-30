@@ -105,7 +105,7 @@ try:
 except:
     import json
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging.getLogger(__name__)
     
 def parseLine(line):
     #print(line)
