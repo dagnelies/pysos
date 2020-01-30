@@ -99,12 +99,13 @@ The way to perform the mapping is utterly simple: it's the sorted keys of the di
 import io
 import os.path
 import bisect
+import logging
 try:
     import ujson as json
 except:
     import json
 
-
+logging.getLogger(__name__).addHandler(logging.NullHandler())
     
 def parseLine(line):
     #print(line)
@@ -164,7 +165,7 @@ class Dict(dict):
             offset += len(line) 
         
         self._free_lines.sort()
-        print("free lines: " + str(len(self._free_lines)))
+        logging.info("free lines: " + str(len(self._free_lines)))
         
     def _freeLine(self, offset):
         self._file.seek(offset)
@@ -321,7 +322,7 @@ class Dict(dict):
         
     def close(self):
         self._file.close()
-        print("free lines: " + str(len(self._free_lines)))
+        logging.info("free lines: " + str(len(self._free_lines)))
 
 
 
@@ -430,7 +431,7 @@ import chardet
 def detectEncoding(path):
     with open(path, 'rb') as f:
         res = chardet.detect( f.read(10*1024*1024) )
-    print(res)
+    logging.debug(res)
     return res['encoding']
     
     detector = UniversalDetector()
@@ -438,21 +439,21 @@ def detectEncoding(path):
         detector.feed(line)
         if detector.done: break
     detector.close()
-    print(detector.result)
+    logging.debug(detector.result)
     return detector.result.encoding
     
 def csv2sos(path, keys=None, encoding=None, dialect=None):
     
     if not encoding:
         encoding = detectEncoding(path)
-        print('Detected encoding: %s' % encoding)
+        logging.info('Detected encoding: %s' % encoding)
     
     csvfile = open(path, 'rt', encoding=encoding)
     sosfile = open(path + '.sos', 'wt', encoding='utf8')
 
     if not dialect:
         dialect = csv.Sniffer().sniff(csvfile.read(1024*1024), delimiters=[';','\t',','])
-        print('Detected csv dialect: %s' % dialect)
+        logging.info('Detected csv dialect: %s' % dialect)
     
     csvfile.seek(0)
     reader = csv.DictReader(csvfile, dialect=dialect)
@@ -461,7 +462,7 @@ def csv2sos(path, keys=None, encoding=None, dialect=None):
         sosfile.write(str(i) + '\t' + json.dumps(row, ensure_ascii=False) + '\n')
         i += 1
         if i % 100000 == 0:
-            print("%10d items converted" % i)
+            logging.debug("%10d items converted" % i)
 
     csvfile.close()    
     sosfile.close()
