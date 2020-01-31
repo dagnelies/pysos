@@ -274,6 +274,10 @@ class Dict(dict):
     def __contains__(self, key):
         return (key in self._offsets)
     
+    def setdefault(self, key, val):
+        # See https://github.com/dagnelies/pysos/issues/3
+        raise UserWarning('Operation not available')
+        
     def observe(self, callback):
         self._observers.append(callback)
         
