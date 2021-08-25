@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pysos',
-    version='1.2.2',
+    version='1.2.3',
     py_modules=['pysos'],
     scripts=['pysos.py'],
     description='Simple Object Storage - Persistent dicts and lists for python.',
