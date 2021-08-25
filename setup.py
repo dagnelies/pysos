@@ -13,5 +13,5 @@ setup(
     license='MIT',
     classifiers=[],
     keywords='persistent persistence dict list file',
-    packages=['chardet']
+    install_requires=['chardet']
 )
