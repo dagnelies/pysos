@@ -12,5 +12,6 @@ setup(
     author_email='arnaud.dagnelies@gmail.com',
     license='MIT',
     classifiers=[],
-    keywords='persistent persistence dict list file'
+    keywords='persistent persistence dict list file',
+    packages=['chardet']
 )
