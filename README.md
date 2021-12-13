@@ -9,13 +9,14 @@ are too big to fit in memory or both.
 There are existing alternatives like `shelve`, which are very good too.
 There main difference with `pysos` is that:
 
-- the data is stored in plain text format
+- only the index is kept in memory, not the values (so you can hold more data than what would fit in memory)
 - it provides both persistent dicts *and* lists
 - objects must be json "dumpable" (no cyclic references, etc.)
 - it's fast (much faster than `shelve` on windows, but slightly slower than native `dbms` on linux)
 - it's unbuffered by design: when the function returns, you are sure it has been written on disk
 - it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
 - it is platform independent, unlike `shelve` which relies on an underlying `dbm` implementation, which may vary from system to system
+- the data is stored in a plain text format
 
 Usage
 -----
