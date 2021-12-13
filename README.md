@@ -56,7 +56,7 @@ print('PYSOS time:', time.time() - t)
 # => PYSOS time: 3.424309253692627
 ```
 
-The resulting file was about 3.5 Mb big. ...So, very roughly speeking, you could insert 1 mb of data per second.
+The resulting file was about 3.5 Mb big. ...So, very roughly speeking, you could insert ~29k items / second on this cheap laptop.
 
 It writes every time you set a value, but only the key/value pair. So the cost of adding/updating/deleting an item is always the same, although adding only is "better" because lots of updating/deleting leads to data fragmentation in the file (wasted junk bytes).
 
