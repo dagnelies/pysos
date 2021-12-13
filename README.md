@@ -37,13 +37,36 @@ db.append('it is now saved in the file')
 ```
 
 
+Performance
+-----------
+
+Just to give a ballpark figure, here is a mini benchmark (on my windows laptop):
+
+```py
+import pysos
+t = time.time()
+import time
+N = 100 * 1000
+db = pysos.Dict("test.db")
+for i in range(N):
+    db["key_" + str(i)] = {"some": "object_" + str(i)}
+db.close()
+
+print('PYSOS time:', time.time() - t)
+# => PYSOS time: 3.424309253692627
+```
+
+The resulting file was about 3.5 Mb big. ...So, very roughly speeking, you could insert 1 mb of data per second.
+
+It writes every time you set a value, but only the key/value pair. So the cost of adding/updating/deleting an item is always the same, although adding only is "better" because lots of updating/deleting leads to data fragmentation in the file (wasted junk bytes).
+
 Implementation notes
 --------------------
 
 ### Is it thread safe?
 
 No. It's not thread safe.
-In practice, synchronization mechanisms are typically desired on a higher level.
+In practice, synchronization mechanisms are typically desired on a higher level anyway.
 
 ### Why not make it async writes?
 
