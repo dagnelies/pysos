@@ -59,10 +59,11 @@ print('PYSOS time:', time.time() - t)
 
 The resulting file was about 3.5 Mb big. ...So, very roughly speeking, you could insert ~29k items / second.
 
-It writes every time you set a value, but only the key/value pair. So the cost of adding/updating/deleting an item is always the same, although adding only is "better" because lots of updating/deleting leads to data fragmentation in the file (wasted junk bytes).
+It writes every time you set a value, but only the key/value pair. So the cost of adding/updating/deleting an item is always the same, although adding only is "better". Lots of updates / deletes / re-inserts would lead to data fragmentation in the file.
 
-Implementation notes
---------------------
+
+F.A.Q.
+------
 
 ### Is it thread safe?
 
