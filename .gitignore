@@ -1,2 +1,5 @@
 dist
 pysos.egg-info
+/.idea
+/temp.sos_dict
+/temp.sos_list

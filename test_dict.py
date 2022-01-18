@@ -1,6 +1,7 @@
 import time
 import test_rnd as rnd
 import random
+import pysos
 
 # initialize the data
 N = 1234
@@ -8,8 +9,7 @@ items = [(rnd.utf8(20), rnd.utf8(200)) for i in range(N)]
 
 start = time.time()
 
-import pysos
-db = pysos.load('temp.sos_dict')
+db = pysos.Dict('temp/sos_dict')
 
 #import shelve
 #db = shelve.open('temp.shelve')

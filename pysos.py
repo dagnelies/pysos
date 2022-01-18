@@ -105,7 +105,7 @@ try:
 except:
     import json
 
-logger = logging.getLogger('pysos')
+logger = logging.getLogger(__name__)
 #logger.addHandler(logging.NullHandler())
     
 def parseLine(line):
@@ -166,7 +166,8 @@ class Dict(dict):
             offset += len(line) 
         
         self._free_lines.sort()
-        logger.info("free lines: " + str(len(self._free_lines)))
+        logger.info(f"Created pysos dict '{self.path}' with {len(self)} items")
+        logger.debug("free lines: " + str(len(self._free_lines)))
         
     def _freeLine(self, offset):
         self._file.seek(offset)
@@ -327,7 +328,8 @@ class Dict(dict):
         
     def close(self):
         self._file.close()
-        logger.info("free lines: " + str(len(self._free_lines)))
+        logger.info(f"Closed pysos dict '{self.path}' with {len(self)} items'")
+        logger.debug("free lines: " + str(len(self._free_lines)))
 
 
 

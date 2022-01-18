@@ -41,25 +41,19 @@ db.append('it is now saved in the file')
 Performance
 -----------
 
-Just to give a ballpark figure, here is a mini benchmark (on my cheap laptop):
+Just to give a ballpark figure, there is a mini benchmark included in `test_benchmark.py`.
+Here are the results on my laptop:
 
-```py
-import pysos
-t = time.time()
-import time
-N = 100 * 1000
-db = pysos.Dict("test.db")
-for i in range(N):
-    db["key_" + str(i)] = {"some": "object_" + str(i)}
-db.close()
+    Writes: 28521 / second
+    Reads: 188502 / second
 
-print('PYSOS time:', time.time() - t)
-# => PYSOS time: 3.424309253692627
-```
+The test is just writing 100k small key/values, and reading them all too.
+It's just meant to give a rough idea.
 
-The resulting file was about 3.5 Mb big. ...So, very roughly speeking, you could insert ~29k items / second.
-
-It writes every time you set a value, but only the key/value pair. So the cost of adding/updating/deleting an item is always the same, although adding only is "better". Lots of updates / deletes / re-inserts would lead to data fragmentation in the file.
+It writes every time you set a value, but only the key/value pair.
+So the cost of adding an item stays constant.
+On the other hand, lots of updates / deletes / re-inserts would lead to data fragmentation in the file.
+This might deteriorate performance in the long run.
 
 
 F.A.Q.

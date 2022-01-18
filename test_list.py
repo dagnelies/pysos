@@ -9,7 +9,7 @@ items = [(i, rnd.utf8(200)) for i in range(N)]
 start = time.time()
 
 import pysos
-db = pysos.List('temp.sos_list')
+db = pysos.List('temp/sos_list')
 
 
 print("%.2fs: %d items loaded" % (time.time() - start, len(db)))
