@@ -105,7 +105,8 @@ try:
 except:
     import json
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger('pysos')
+#logger.addHandler(logging.NullHandler())
     
 def parseLine(line):
     #print(line)
@@ -165,7 +166,7 @@ class Dict(dict):
             offset += len(line) 
         
         self._free_lines.sort()
-        logging.info("free lines: " + str(len(self._free_lines)))
+        logger.info("free lines: " + str(len(self._free_lines)))
         
     def _freeLine(self, offset):
         self._file.seek(offset)
@@ -326,7 +327,7 @@ class Dict(dict):
         
     def close(self):
         self._file.close()
-        logging.info("free lines: " + str(len(self._free_lines)))
+        logger.info("free lines: " + str(len(self._free_lines)))
 
 
 
@@ -435,7 +436,7 @@ import chardet
 def detectEncoding(path):
     with open(path, 'rb') as f:
         res = chardet.detect( f.read(10*1024*1024) )
-    logging.debug(res)
+    logger.debug(res)
     return res['encoding']
     
     detector = UniversalDetector()
@@ -443,21 +444,21 @@ def detectEncoding(path):
         detector.feed(line)
         if detector.done: break
     detector.close()
-    logging.debug(detector.result)
+    logger.debug(detector.result)
     return detector.result.encoding
     
 def csv2sos(path, keys=None, encoding=None, dialect=None):
     
     if not encoding:
         encoding = detectEncoding(path)
-        logging.info('Detected encoding: %s' % encoding)
+        logger.info('Detected encoding: %s' % encoding)
     
     csvfile = open(path, 'rt', encoding=encoding)
     sosfile = open(path + '.sos', 'wt', encoding='utf8')
 
     if not dialect:
         dialect = csv.Sniffer().sniff(csvfile.read(1024*1024), delimiters=[';','\t',','])
-        logging.info('Detected csv dialect: %s' % dialect)
+        logger.info('Detected csv dialect: %s' % dialect)
     
     csvfile.seek(0)
     reader = csv.DictReader(csvfile, dialect=dialect)
@@ -466,7 +467,7 @@ def csv2sos(path, keys=None, encoding=None, dialect=None):
         sosfile.write(str(i) + '\t' + json.dumps(row, ensure_ascii=False) + '\n')
         i += 1
         if i % 100000 == 0:
-            logging.debug("%10d items converted" % i)
+            logger.debug("%10d items converted" % i)
 
     csvfile.close()    
     sosfile.close()
