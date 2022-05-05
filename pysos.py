@@ -289,7 +289,8 @@ class Dict(dict):
     
     def clear(self):
         self._file.truncate(0)
-        self._file.write( self.START_FLAG )
+        self._file.seek(0)
+        self._file.write(self.START_FLAG)
         self._file.flush()
         self._offsets = {}
         self._free_lines = []
