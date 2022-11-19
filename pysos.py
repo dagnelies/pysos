@@ -283,6 +283,13 @@ class Dict(dict):
     def observe(self, callback):
         self._observers.append(callback)
         
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+        except:
+            raise
     
     def keys(self):
         return self._offsets.keys()
