@@ -199,6 +199,16 @@ class Dict(dict):
         value = parseValue(line)
         return value
         
+       
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+        except:
+            raise
+            
+            
     def __setitem__(self, key, value):
         # trigger observers
         if self._observers:
