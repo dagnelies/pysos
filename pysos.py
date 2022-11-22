@@ -358,6 +358,16 @@ class List(list):
         key = self._indexes[i]
         return self._dict[key]
         
+    
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+        except:
+            raise
+            
+            
     def __setitem__(self, i, value):
         # trigger observers
         if self._observers:
