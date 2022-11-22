@@ -117,13 +117,11 @@ def parseLine(line):
     
 def parseKey(line):
     (left, sep, right) = line.partition(b'\t')
-    key = json.loads( left.decode('utf8') )
-    return key
+    return json.loads( left.decode('utf8') )
     
 def parseValue(line):
     (left, sep, right) = line.partition(b'\t')
-    value = json.loads( right.decode('utf8') )
-    return value
+    return json.loads( right.decode('utf8') )
 
 
 class Dict(dict):
@@ -131,30 +129,30 @@ class Dict(dict):
 
     def __init__(self, path):
         self.path = path
-        
+
         if os.path.exists(path):
             file = io.open(path, 'r+b')
         else:
             file = io.open(path, 'w+b')
             file.write( self.START_FLAG )
             file.flush()
-        
+
         self._file = file
         self._offsets = {}   # the (size, offset) of the lines, where size is in bytes, including the trailing \n
         self._free_lines = []
         self._observers = []
-        
+
         offset = 0
         while True:
             line = file.readline()
             if line == b'': # end of file
                 break
-            
+
             # ignore empty lines
             if line == b'\n':
                 offset += len(line) 
                 continue
-            
+
             if line.startswith(b'#'):	# skip comments but add to free list
                 if len(line) > 5:
                     self._free_lines.append( (len(line), offset) )
@@ -162,12 +160,12 @@ class Dict(dict):
                 # let's parse the value as well to be sure the data is ok
                 key = parseKey(line)
                 self._offsets[key] = offset
-            
+
             offset += len(line) 
-        
+
         self._free_lines.sort()
         logger.info(f"Created pysos dict '{self.path}' with {len(self)} items")
-        logger.debug("free lines: " + str(len(self._free_lines)))
+        logger.debug(f"free lines: {len(self._free_lines)}")
         
     def _freeLine(self, offset):
         self._file.seek(offset)
@@ -182,10 +180,9 @@ class Dict(dict):
         
     def _findLine(self, size):
         index = bisect.bisect( self._free_lines, (size,0) )
-        if index >= len( self._free_lines ):
-            return None
-        else:
-            return self._free_lines.pop(index)
+        return (
+            None if index >= len(self._free_lines) else self._free_lines.pop(index)
+        )
         
     def _isWorthIt(self, size):
         # determines if it's worth to add the free line to the list
@@ -196,8 +193,7 @@ class Dict(dict):
         offset = self._offsets[key]
         self._file.seek(offset)
         line = self._file.readline()
-        value = parseValue(line)
-        return value
+        return parseValue(line)
         
     def __setitem__(self, key, value):
         # trigger observers
@@ -205,21 +201,13 @@ class Dict(dict):
             old_value = self[key] if key in self else None
             for callback in self._observers:
                 callback(key, value, old_value)
-        
-        if key in self._offsets:
-            # to be removed once the new value has been written
-            old_offset = self._offsets[key]
-        else:
-            old_offset = None
-            
-        
+
+        old_offset = self._offsets[key] if key in self._offsets else None
         line = json.dumps(key,ensure_ascii=False) + '\t' + json.dumps(value,ensure_ascii=False) + '\n'
         line = line.encode('UTF-8')
         size = len(line)
-        
-        found = self._findLine(size)
 
-        if found:
+        if found := self._findLine(size):
             # great, we can recycle a commented line
             (place, offset) = found
             self._file.seek(offset)
@@ -232,12 +220,12 @@ class Dict(dict):
                 if diff > 5:
                     # it's worth to reuse that space
                     bisect.insort(self._free_lines, (diff, offset + size) )
-                
+
         else:
             # go to end of file
             self._file.seek(0, os.SEEK_END)
             offset = self._file.tell()
-        
+
         # if it's a really big line, it won't be written at once on the disk
         # so until it's done, let's consider it a comment
         self._file.write(b'#' + line[1:])
@@ -249,13 +237,13 @@ class Dict(dict):
         self._file.flush()
         # now that everything has been written...
         self._file.seek(offset)
-        self._file.write(line[0:1])
+        self._file.write(line[:1])
         self._file.flush()
-    
+
         # and now remove the previous entry
         if old_offset:
             self._freeLine(old_offset)
-        
+
         self._offsets[key] = offset
         
         
@@ -308,11 +296,11 @@ class Dict(dict):
             # if somethig was read/written while iterating, the stream might be positioned elsewhere
             if self._file.tell() != offset:
                 self._file.seek(offset) #put it back on track
-            
+
             line = self._file.readline()
             if line == b'': # end of file
                 break
-            
+
             offset += len(line)
             # ignore empty and commented lines
             if line == b'\n' or line[0] == 35:
@@ -338,7 +326,7 @@ class Dict(dict):
     def close(self):
         self._file.close()
         logger.info(f"Closed pysos dict '{self.path}' with {len(self)} items'")
-        logger.debug("free lines: " + str(len(self._free_lines)))
+        logger.debug(f"free lines: {len(self._free_lines)}")
 
 
 
@@ -370,12 +358,8 @@ class List(list):
         if self._observers:
             for callback in self._observers:
                 callback(len(self._indexes), value, None)
-                
-        if len(self._indexes) == 0:
-            key = 0
-        else:
-            key = self._indexes[-1] + 1
-                
+
+        key = 0 if len(self._indexes) == 0 else self._indexes[-1] + 1
         self._dict[key] = value
         self._indexes.append(key)
         
@@ -450,35 +434,24 @@ def detectEncoding(path):
     logger.debug(res)
     return res['encoding']
     
-    detector = UniversalDetector()
-    for line in open(path, 'rb'):
-        detector.feed(line)
-        if detector.done: break
-    detector.close()
-    logger.debug(detector.result)
-    return detector.result.encoding
-    
 def csv2sos(path, keys=None, encoding=None, dialect=None):
     
     if not encoding:
         encoding = detectEncoding(path)
-        logger.info('Detected encoding: %s' % encoding)
-    
-    csvfile = open(path, 'rt', encoding=encoding)
-    sosfile = open(path + '.sos', 'wt', encoding='utf8')
+        logger.info(f'Detected encoding: {encoding}')
 
-    if not dialect:
-        dialect = csv.Sniffer().sniff(csvfile.read(1024*1024), delimiters=[';','\t',','])
-        logger.info('Detected csv dialect: %s' % dialect)
-    
-    csvfile.seek(0)
-    reader = csv.DictReader(csvfile, dialect=dialect)
-    i = 0
-    for row in reader:
-        sosfile.write(str(i) + '\t' + json.dumps(row, ensure_ascii=False) + '\n')
-        i += 1
-        if i % 100000 == 0:
-            logger.debug("%10d items converted" % i)
+    with open(path, 'rt', encoding=encoding) as csvfile:
+        sosfile = open(f'{path}.sos', 'wt', encoding='utf8')
 
-    csvfile.close()    
+        if not dialect:
+            dialect = csv.Sniffer().sniff(csvfile.read(1024*1024), delimiters=[';','\t',','])
+            logger.info(f'Detected csv dialect: {dialect}')
+
+        csvfile.seek(0)
+        reader = csv.DictReader(csvfile, dialect=dialect)
+        for i, row in enumerate(reader, start=1):
+            sosfile.write(str(i) + '\t' + json.dumps(row, ensure_ascii=False) + '\n')
+            if i % 100000 == 0:
+                logger.debug("%10d items converted" % i)
+
     sosfile.close()
