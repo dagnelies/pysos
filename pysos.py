@@ -156,7 +156,7 @@ class Dict(dict):
                 continue
             
             if line.startswith(b'#'):	# skip comments but add to free list
-                if len(line) > 5:
+                if len(line) > 5 and offset > 0:
                     self._free_lines.append( (len(line), offset) )
             else:
                 # let's parse the value as well to be sure the data is ok
