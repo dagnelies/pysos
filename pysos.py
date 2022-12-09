@@ -1,8 +1,7 @@
 """SOS: Simple Objects Storage / persistant dictionaries and lists.
 
 This is ideal for lists or dictionaries which either need persistence,
-are too big to fit in memory or both. It's high performance and supports
-both synchronous and asynchronous modes.
+are too big to fit in memory or both. It's high performance.
 
 Dictionaries
 ============
