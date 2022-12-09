@@ -10,6 +10,7 @@ start = time.time()
 
 import pysos
 db = pysos.List('temp/sos_list')
+db.clear()
 
 
 print("%.2fs: %d items loaded" % (time.time() - start, len(db)))
