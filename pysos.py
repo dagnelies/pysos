@@ -189,11 +189,6 @@ class Dict(collections.abc.MutableMapping):
         else:
             return self._free_lines.pop(index)
         
-    def _isWorthIt(self, size):
-        # determines if it's worth to add the free line to the list
-        # we don't want to clutter this list with a large amount of tiny gaps
-        return (size > 5 + len(self._free_lines))
-
     def __getitem__(self, key):
         offset = self._offsets[key]
         self._file.seek(offset)
