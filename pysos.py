@@ -198,8 +198,7 @@ class Dict(dict):
         line = self._file.readline()
         value = parseValue(line)
         return value
-        
-       
+
     def get(self, key, default=None):
         try:
             return self.__getitem__(key)
@@ -207,14 +206,9 @@ class Dict(dict):
             return default
         except:
             raise
-            
-            
+
     def __setitem__(self, key, value):
-        # trigger observers
-        if self._observers:
-            old_value = self[key] if key in self else None
-            for callback in self._observers:
-                callback(key, value, old_value)
+        self._trigger_observers(key, value, self.get(key))
         
         if key in self._offsets:
             # to be removed once the new value has been written
@@ -267,21 +261,12 @@ class Dict(dict):
             self._freeLine(old_offset)
         
         self._offsets[key] = offset
-        
-        
             
-        
     def __delitem__(self, key):
-        # trigger observers
-        if self._observers:
-            old_value = self[key]
-            for callback in self._observers:
-                callback(key, None, old_value)
-                
+        self._trigger_observers(key, None, self[key])
         offset = self._offsets[key]
         self._freeLine(offset)
         del self._offsets[key]
-        
         
     def __contains__(self, key):
         return (key in self._offsets)
@@ -293,8 +278,11 @@ class Dict(dict):
         
     def observe(self, callback):
         self._observers.append(callback)
-        
-    
+
+    def _trigger_observers(self, key, new_value, old_value):
+        for callback in self._observers:
+            callback(key, new_value, old_value)
+
     def keys(self):
         return self._offsets.keys()
     
@@ -332,13 +320,10 @@ class Dict(dict):
             
     def __len__(self):
         return len(self._offsets)
-        
 
-    
     def size(self):
         self._file.size()
-        
-        
+
     def close(self):
         self._file.close()
         logger.info(f"Closed pysos dict '{self.path}' with {len(self)} items'")
@@ -358,8 +343,7 @@ class List(list):
     def __getitem__(self, i):
         key = self._indexes[i]
         return self._dict[key]
-        
-    
+
     def get(self, key, default=None):
         try:
             return self.__getitem__(key)
@@ -367,24 +351,14 @@ class List(list):
             return default
         except:
             raise
-            
-            
+
     def __setitem__(self, i, value):
-        # trigger observers
-        if self._observers:
-            old_value = self[i]
-            for callback in self._observers:
-                callback(i, value, old_value)
-                
+        self._trigger_observers(i, value, self[i])
         key = self._indexes[i]
         self._dict[key] = value
     
     def append(self, value):
-        # trigger observers
-        if self._observers:
-            for callback in self._observers:
-                callback(len(self._indexes), value, None)
-                
+        self._trigger_observers(len(self._indexes), value, None)
         if len(self._indexes) == 0:
             key = 0
         else:
@@ -394,12 +368,7 @@ class List(list):
         self._indexes.append(key)
         
     def __delitem__(self, i):
-        # trigger observers
-        if self._observers:
-            old_value = self[i]
-            for callback in self._observers:
-                callback(i, None, old_value)
-                
+        self._trigger_observers(i, None, self[i])
         key = self._indexes[i]
         del self._dict[key]
         del self._indexes[i]
@@ -417,12 +386,15 @@ class List(list):
     
     def observe(self, callback):
         self._observers.append(callback)
-        
+
+    def _trigger_observers(self, index, new_value, old_value):
+        for callback in self._observers:
+            callback(index, new_value, old_value)
+
     def clear(self):
         self._dict.clear()
         self._indexes = []
-    
-    
+
     def size(self):
         self._dict.size()
         
