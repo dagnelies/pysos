@@ -101,6 +101,7 @@ import os.path
 import bisect
 import logging
 import collections.abc
+import shutil
 try:
     import ujson as json
 except:
@@ -320,6 +321,18 @@ class Dict(collections.abc.MutableMapping):
         logger.info(f"Closed pysos dict '{self.path}' with {len(self)} items'")
         logger.debug("free lines: " + str(len(self._free_lines)))
 
+    def vacuum(self):
+        self.close()
+        tmp_file = str(self.path) + ".tmp"
+        with open(self.path, "rb") as in_file:
+            with open(tmp_file, "wb") as out_file:
+                out_file.write(next(in_file))  # start flag
+                for line in in_file:
+                    if line.startswith(b"#") or line == b"\n":
+                        continue
+                    out_file.write(line)
+        shutil.move(tmp_file, self.path)
+        self.__init__(self.path)
 
 
 class List(collections.abc.MutableSequence):
