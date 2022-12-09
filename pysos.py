@@ -100,6 +100,7 @@ import io
 import os.path
 import bisect
 import logging
+import collections.abc
 try:
     import ujson as json
 except:
@@ -126,7 +127,7 @@ def parseValue(line):
     return value
 
 
-class Dict(dict):
+class Dict(collections.abc.MutableMapping):
     START_FLAG = b'# FILE-DICT v1\n'
 
     def __init__(self, path):
@@ -191,21 +192,13 @@ class Dict(dict):
         # determines if it's worth to add the free line to the list
         # we don't want to clutter this list with a large amount of tiny gaps
         return (size > 5 + len(self._free_lines))
-        
+
     def __getitem__(self, key):
         offset = self._offsets[key]
         self._file.seek(offset)
         line = self._file.readline()
         value = parseValue(line)
         return value
-
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-        except:
-            raise
 
     def __setitem__(self, key, value):
         self._trigger_observers(key, value, self.get(key))
@@ -267,15 +260,13 @@ class Dict(dict):
         offset = self._offsets[key]
         self._freeLine(offset)
         del self._offsets[key]
-        
+
+    def __bool__(self):
+        return bool(len(self))
+
     def __contains__(self, key):
         return (key in self._offsets)
-    
-    def setdefault(self, key, val):
-        if key not in self:
-            self[key] = val
-        return self[key]
-        
+
     def observe(self, callback):
         self._observers.append(callback)
 
@@ -312,7 +303,7 @@ class Dict(dict):
             yield parseLine(line)
     
     def __iter__(self):
-        return self.keys()
+        return iter(self._offsets)
     
     def values(self):
         for item in self.items():
@@ -331,8 +322,7 @@ class Dict(dict):
 
 
 
-
-class List(list):
+class List(collections.abc.MutableSequence):
     START_FLAG = b'# FILE-LIST v1\n'
     
     def __init__(self, path):
@@ -341,16 +331,10 @@ class List(list):
         self._observers = []
     
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            return [self[ii] for ii in range(*i.indices(len(self)))]
         key = self._indexes[i]
         return self._dict[key]
-
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-        except:
-            raise
 
     def __setitem__(self, i, value):
         self._trigger_observers(i, value, self[i])
@@ -376,9 +360,17 @@ class List(list):
     def __len__(self):
         return len(self._indexes)
         
-    def __contains__(self, key):
-        raise Exception('Operation not supported for lists')
-    
+    def __contains__(self, value):
+        return value in self._dict.values()
+
+    def insert(self, i, value):
+        if i != 0:
+            raise NotImplementedError()
+        self._trigger_observers(i, value, None)
+        key = self._indexes[0] - 1
+        self._indexes.insert(0, key)
+        self._dict[key] = value
+   
     # this must be overriden in order to provide the correct order
     def __iter__(self):
         for i in range(len(self)):
