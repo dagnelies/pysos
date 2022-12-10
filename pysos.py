@@ -1,8 +1,7 @@
 """SOS: Simple Objects Storage / persistant dictionaries and lists.
 
 This is ideal for lists or dictionaries which either need persistence,
-are too big to fit in memory or both. It's high performance and supports
-both synchronous and asynchronous modes.
+are too big to fit in memory or both. It's high performance.
 
 Dictionaries
 ============
@@ -100,6 +99,8 @@ import io
 import os.path
 import bisect
 import logging
+import collections.abc
+import shutil
 try:
     import ujson as json
 except:
@@ -126,7 +127,7 @@ def parseValue(line):
     return value
 
 
-class Dict(dict):
+class Dict(collections.abc.MutableMapping):
     START_FLAG = b'# FILE-DICT v1\n'
 
     def __init__(self, path):
@@ -187,34 +188,15 @@ class Dict(dict):
         else:
             return self._free_lines.pop(index)
         
-    def _isWorthIt(self, size):
-        # determines if it's worth to add the free line to the list
-        # we don't want to clutter this list with a large amount of tiny gaps
-        return (size > 5 + len(self._free_lines))
-        
     def __getitem__(self, key):
         offset = self._offsets[key]
         self._file.seek(offset)
         line = self._file.readline()
         value = parseValue(line)
         return value
-        
-       
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-        except:
-            raise
-            
-            
+
     def __setitem__(self, key, value):
-        # trigger observers
-        if self._observers:
-            old_value = self[key] if key in self else None
-            for callback in self._observers:
-                callback(key, value, old_value)
+        self._trigger_observers(key, value, self.get(key))
         
         if key in self._offsets:
             # to be removed once the new value has been written
@@ -267,34 +249,26 @@ class Dict(dict):
             self._freeLine(old_offset)
         
         self._offsets[key] = offset
-        
-        
             
-        
     def __delitem__(self, key):
-        # trigger observers
-        if self._observers:
-            old_value = self[key]
-            for callback in self._observers:
-                callback(key, None, old_value)
-                
+        self._trigger_observers(key, None, self[key])
         offset = self._offsets[key]
         self._freeLine(offset)
         del self._offsets[key]
-        
-        
+
+    def __bool__(self):
+        return bool(len(self))
+
     def __contains__(self, key):
         return (key in self._offsets)
-    
-    def setdefault(self, key, val):
-        if key not in self:
-            self[key] = val
-        return self[key]
-        
+
     def observe(self, callback):
         self._observers.append(callback)
-        
-    
+
+    def _trigger_observers(self, key, new_value, old_value):
+        for callback in self._observers:
+            callback(key, new_value, old_value)
+
     def keys(self):
         return self._offsets.keys()
     
@@ -324,7 +298,7 @@ class Dict(dict):
             yield parseLine(line)
     
     def __iter__(self):
-        return self.keys()
+        return iter(self._offsets)
     
     def values(self):
         for item in self.items():
@@ -332,22 +306,30 @@ class Dict(dict):
             
     def __len__(self):
         return len(self._offsets)
-        
 
-    
     def size(self):
         self._file.size()
-        
-        
+
     def close(self):
         self._file.close()
         logger.info(f"Closed pysos dict '{self.path}' with {len(self)} items'")
         logger.debug("free lines: " + str(len(self._free_lines)))
 
+    def vacuum(self):
+        self.close()
+        tmp_file = str(self.path) + ".tmp"
+        with open(self.path, "rb") as in_file:
+            with open(tmp_file, "wb") as out_file:
+                out_file.write(next(in_file))  # start flag
+                for line in in_file:
+                    if line.startswith(b"#") or line == b"\n":
+                        continue
+                    out_file.write(line)
+        shutil.move(tmp_file, self.path)
+        self.__init__(self.path)
 
 
-
-class List(list):
+class List(collections.abc.MutableSequence):
     START_FLAG = b'# FILE-LIST v1\n'
     
     def __init__(self, path):
@@ -356,35 +338,18 @@ class List(list):
         self._observers = []
     
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            return [self[ii] for ii in range(*i.indices(len(self)))]
         key = self._indexes[i]
         return self._dict[key]
-        
-    
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-        except:
-            raise
-            
-            
+
     def __setitem__(self, i, value):
-        # trigger observers
-        if self._observers:
-            old_value = self[i]
-            for callback in self._observers:
-                callback(i, value, old_value)
-                
+        self._trigger_observers(i, value, self[i])
         key = self._indexes[i]
         self._dict[key] = value
     
     def append(self, value):
-        # trigger observers
-        if self._observers:
-            for callback in self._observers:
-                callback(len(self._indexes), value, None)
-                
+        self._trigger_observers(len(self._indexes), value, None)
         if len(self._indexes) == 0:
             key = 0
         else:
@@ -394,12 +359,7 @@ class List(list):
         self._indexes.append(key)
         
     def __delitem__(self, i):
-        # trigger observers
-        if self._observers:
-            old_value = self[i]
-            for callback in self._observers:
-                callback(i, None, old_value)
-                
+        self._trigger_observers(i, None, self[i])
         key = self._indexes[i]
         del self._dict[key]
         del self._indexes[i]
@@ -407,9 +367,17 @@ class List(list):
     def __len__(self):
         return len(self._indexes)
         
-    def __contains__(self, key):
-        raise Exception('Operation not supported for lists')
-    
+    def __contains__(self, value):
+        return value in self._dict.values()
+
+    def insert(self, i, value):
+        if i != 0:
+            raise NotImplementedError()
+        self._trigger_observers(i, value, None)
+        key = self._indexes[0] - 1
+        self._indexes.insert(0, key)
+        self._dict[key] = value
+   
     # this must be overriden in order to provide the correct order
     def __iter__(self):
         for i in range(len(self)):
@@ -417,12 +385,15 @@ class List(list):
     
     def observe(self, callback):
         self._observers.append(callback)
-        
+
+    def _trigger_observers(self, index, new_value, old_value):
+        for callback in self._observers:
+            callback(index, new_value, old_value)
+
     def clear(self):
         self._dict.clear()
         self._indexes = []
-    
-    
+
     def size(self):
         self._dict.size()
         

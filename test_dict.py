@@ -10,6 +10,7 @@ items = [(rnd.utf8(20), rnd.utf8(200)) for i in range(N)]
 start = time.time()
 
 db = pysos.Dict('temp/sos_dict')
+db.clear()
 
 #import shelve
 #db = shelve.open('temp.shelve')
